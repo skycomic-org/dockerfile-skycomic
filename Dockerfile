@@ -1,21 +1,21 @@
-FROM ubuntu:14.04
-ENV DEBIAN_FRONTEND noninteractive
-
-ADD set-mysql-password.sh /tmp/set-mysql-password.sh
+FROM tutum/lamp:latest
 RUN apt-get update && \
 	apt-get upgrade -y && \
-	debconf-set-selections <<< 'mariadb-server-10.0 mysql-server/root_password password PASS' && \
-	debconf-set-selections <<< 'mariadb-server-10.0 mysql-server/root_password_again password PASS' && \
-	apt-get install -y supervisor \
-		apache2-mpm-event \
-		mariadb-server \
-		php5-mcrypt php5-xcache php5-mysqlnd php5-fpm php5-gd php5-json php5-curl \
-		phpmyadmin && \
-	apt-get clean && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* && \
-	sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf && \
-	/bin/sh /tmp/set-mysql-password.sh 
+	apt-get remove -y php5-mysql && \
+	apt-get install -y php5-xcache php5-mysqlnd php5-gd php5-json php5-curl php5-sqlite && \
+	apt-get clean && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
 
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-CMD ["/usr/bin/supervisord"]
-
-EXPOSE 80
+RUN ln -s ../../mods-available/mcrypt.ini /etc/php5/apache2/conf.d/20-mcrypt.ini && \
+	ln -s ../../mods-available/mcrypt.ini /etc/php5/cli/conf.d/20-mcrypt.ini && \
+	rm -fr /app && git clone --recursive https://github.com/skycomic-org/skycomic.org.git /app && \
+	cp /app/index.default.php /app/index.php && \
+	cp /app/application/config/config.default.php /app/application/config/config.php && \
+	cp /app/application/config/constants.default.php /app/application/config/constants.php && \
+	cp /app/application/config/database.default.php /app/application/config/database.php && \
+	sed -i "s/\\['username'\\] = 'comic'/['username'] = 'root'/g" /app/application/config/database.php && \
+	mysql -u root -e "CREATE DATABASE comic;" && \
+	mysql -u root comic < /app/private/install.sql && \
+	chown www-data:www-data /app/application/logs /app/application/cache && \
+	/app/private/scripts/init.sh
+EXPOSE 80 3306
+CMD ["/run.sh"]
