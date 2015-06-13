@@ -17,7 +17,7 @@ RUN ln -s ../../mods-available/mcrypt.ini /etc/php5/apache2/conf.d/20-mcrypt.ini
 	sed -i "s/\\['username'\\] = 'comic'/['username'] = 'root'/g" /app/application/config/database.php && \
 	chown www-data:www-data /app/application/logs /app/application/cache && \
 	/tmp/run-mysql-cmd.sh && rm /tmp/run-mysql-cmd.sh && \
-	cd /app && npm install && npm run bower install && npm run gulp
+	cd /app/frontend && npm install && npm run bower install && npm run gulp
 
 EXPOSE 80 3306
 CMD ["/run.sh"]
