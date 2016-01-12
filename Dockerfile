@@ -1,4 +1,4 @@
-[ensky] ~ > sc
+#[ensky] ~ > sc
 FROM tutum/lamp:latest
 RUN apt-get update && \
         apt-get upgrade -y && \
